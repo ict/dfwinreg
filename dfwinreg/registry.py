@@ -228,7 +228,7 @@ class WinRegistry(object):
     Returns:
       WinRegistryKey: the users Windows Registry key or None if not available.
     """
-    user_key_name, _, key_path_suffix = key_path_suffix.partition(
+    user_key_name, _, key_path_suffix = key_path_suffix.lstrip('\\').partition(
         definitions.KEY_PATH_SEPARATOR)
 
     # HKEY_USERS\.DEFAULT is an alias for HKEY_USERS\S-1-5-18 which is
@@ -263,11 +263,14 @@ class WinRegistry(object):
         profile_path_upper = profile_path.upper()
         registry_file = self._GetCachedUserFileByPath(profile_path_upper)
         if not registry_file:
-          break
+          registry_file = self._OpenFile(profile_path)
+          if not registry_file:
+              break
+          self.MapUserFile(profile_path_upper, registry_file)
 
         key_path_prefix = definitions.KEY_PATH_SEPARATOR.join([
             'HKEY_USERS', user_key_name])
-        key_path = ''.join([key_path_prefix, key_path_suffix])
+        key_path = definitions.KEY_PATH_SEPARATOR.join([key_path_prefix, key_path_suffix])
 
         registry_file.SetKeyPathPrefix(key_path_prefix)
         return registry_file.GetKeyByPath(key_path)
